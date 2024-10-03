@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  app:
+    build: ./app/
+    env_file:
+      - ./app/.env
+    volumes:
+      - ./app:/app
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST=db
+    networks:
+      - backend
+    depends_on:
+      - db
+
+  web-proxy:
+    build: ./nginx/
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - app
+
+  rabbit-mq:
+    image: rabbitmq
+    ports:
+      - 15672:15672
+      - 5672:5672
+    volumes:
+      - ./rabbitmq_data:/var/lib/rabbitmq
+    restart: on-failure
+
+  db:
+    image: postgres
+    container_name: postgres-db
+    restart: always
+    user: postgres
+    ports:
+      - 5432:5432
+    networks:
+      - backend
+    env_file:
+      - ./.env
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  database:
+    name: database
+
+networks:
+  backend:
+    driver: bridge
