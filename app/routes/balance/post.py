@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
-from app.schemas.balance import BalanceResponse
-from app.services.crud.person_service import PersonService
-from app.services.crud.user_service import UserService
-from app.database.database import get_db
+from schemas.balance import BalanceResponse
+from services.crud.person_service import PersonService
+from services.crud.user_service import UserService
+from database.database import get_db
 
 
 balance_post_route = APIRouter(tags=['Balance'])

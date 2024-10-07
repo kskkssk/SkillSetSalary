@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from schemas.balance import BalanceResponse
 from fastapi import APIRouter, Depends
-from services.crud.personal_service import PersonService
+from services.crud.person_service import PersonService
 from services.crud.user_service import UserService
 from database.database import get_db
 from sqlalchemy.orm import Session

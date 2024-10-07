@@ -1,12 +1,11 @@
-from app.models.user import User
-from app.models.balance import Balance
-from app.services.crud.request_service import RequestService
-from app.services.crud.balance_service import BalanceService
+from models.user import User
+from models.balance import Balance
+from services.crud.request_service import RequestService
+from services.crud.balance_service import BalanceService
 from typing import List, Optional
 from sqlalchemy.orm.attributes import flag_modified
 from passlib.context import CryptContext
 from auth.jwt_handler import create_access_token
-from app.services.parser.fill_df import new_data
 from datetime import timedelta, datetime
 import pandas as pd
 
@@ -81,7 +80,6 @@ class UserService:
         transaction_data = {
             'spent_money': 0,
             'salary': prediction.to_dict(orient='records'),
-            'user_data': {key: value for key, value in new_data.items()},
             'current_time': time
         }
         if len(requests) <= 2:

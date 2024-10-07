@@ -110,12 +110,11 @@ postgres_data/
 
 # Ignore RabbitMQ data
 rabbitmq_data/
-
+shared_data/
 rabbitmq
 
 app/telegram_bot/config.py
 .DS_Store
 
-./webview/.env
 ./.env
 ./app/.env

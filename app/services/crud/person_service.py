@@ -1,12 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 from typing import List, Dict
-from app.models.balance import Balance
-from app.models.user import User
-from app.services.crud.balance_service import BalanceService
-from app.services.crud.request_service import RequestService
+from models.balance import Balance
+from models.user import User
+from services.crud.balance_service import BalanceService
+from services.crud.request_service import RequestService
 from datetime import datetime, timedelta
-from app.services.parser.fill_df import new_data
 import pandas as pd
 
 
@@ -17,21 +16,23 @@ class PersonService:
         self.balance_service = BalanceService(session)
         self.request_service = RequestService(session)
 
-    def handle_request(self, data: pd.DataFrame):
+    def handle_request(self, pdf_path: str):
         if self.current_user is None:
             raise ValueError("No user is currently logged in")
 
         time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-        prediction = self.request_service.prediction(data)
+        today = datetime.now().date()
+        prediction = self.request_service.predict(pdf_path)
         requests = [trans for trans in self.current_user.transaction_list if
-                    trans['current_time'] > datetime.utcnow() - timedelta(days=1)]
+                    datetime.strptime(trans['current_time'], '%Y-%m-%d %H:%M:%S').date() == today
+                    ]
+
         transaction_data = {
             'spent_money': 0,
-            'salary': prediction.to_dict(orient='records'),
-            'user_data': {key: value for key, value in new_data.items()},
+            'salary': prediction,
             'current_time': time
         }
-        if len(requests) <= 2:
+        if len(requests) < 2:
             self.current_user.transaction_list.append(transaction_data)
             flag_modified(self.current_user, "transaction_list")
             self.session.commit()
@@ -48,6 +49,12 @@ class PersonService:
                 return transaction_data
             else:
                 raise ValueError("Not enough balance")
+
+    def handle_interpret(self, pdf_path: str):
+        if self.current_user is None:
+            raise ValueError("No user is currently logged in")
+        skills_improve, skills_advice = self.request_service.interpretate_pred(pdf_path)
+        return skills_improve, skills_advice
 
     def transaction_history(self) -> List[dict]:
         if self.current_user is None:

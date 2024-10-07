@@ -1,38 +1,103 @@
-version: '3'
-
 services:
   app:
-    build: ./app/
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
     env_file:
-      - ./app/.env
+      - ./.env
     volumes:
       - ./app:/app
+      - ./worker:/app/worker
+      - ./shared_data:/app/shared_data
+    ports:
+      - "8083:8083"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=postgres
       - POSTGRES_HOST=db
+      - PYTHONPATH=/app
     networks:
       - backend
+    command: bash -c "alembic revision --autogenerate; alembic upgrade head && uvicorn api:app --host 0.0.0.0 --port 8083 --reload"
     depends_on:
       - db
-
+      - rabbit-mq
   web-proxy:
     build: ./nginx/
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     depends_on:
       - app
+    networks:
+      - backend
+
+  worker:
+    build:
+      context: .
+      dockerfile: ./worker/Dockerfile
+    command:
+    env_file:
+      - ./.env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=postgres
+      - CELERY_BROKER_URL=amqp://rmuser:rmpassword@rabbitmq:5672//
+      - CELERY_RESULT_BACKEND=rpc://
+    networks:
+      - backend
+    depends_on:
+      - rabbit-mq
+      - db
+    deploy:
+      replicas: 4
+    volumes:
+      - ./shared_data:/app/shared_data
+    restart: always
+
 
   rabbit-mq:
-    image: rabbitmq
+    image: rabbitmq:3-management
+    hostname: rabbitmq
     ports:
-      - 15672:15672
-      - 5672:5672
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=rmuser
+      - RABBITMQ_DEFAULT_PASS=rmpassword
+      - RABBITMQ_DEFAULT_VHOST=/
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbit disk_free_limit 2147483648
     volumes:
-      - ./rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
     restart: on-failure
+    networks:
+      - backend
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  telegram-bot:
+    build:
+      context: .
+      dockerfile: ./app/telegram_bot/Dockerfile
+    env_file:
+      - ./.env
+    environment:
+      - PYTHONPATH=/app
+    networks:
+      - backend
+    volumes:
+      - ./shared_data:/app/shared_data
+    depends_on:
+      - app
+      - db
+    command: ["bash", "-c", "python telegram_bot/tg_bot.py"]
 
   db:
     image: postgres
@@ -40,7 +105,7 @@ services:
     restart: always
     user: postgres
     ports:
-      - 5432:5432
+      - "5432:5432"
     networks:
       - backend
     env_file:
@@ -50,16 +115,17 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
     volumes:
-      - database:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  database:
-    name: database
+  postgres_data:
+  rabbitmq_data:
+  shared_data:
 
 networks:
   backend:

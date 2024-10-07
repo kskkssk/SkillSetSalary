@@ -1,17 +1,28 @@
-from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi import APIRouter, status, HTTPException, Depends, UploadFile, File
 from sqlalchemy.orm import Session
-from app.services.crud.user_service import UserService
-from app.services.crud.personal_service import PersonService
-from app.services.crud.request_service import RequestService
+from services.crud.user_service import UserService
+from services.crud.person_service import PersonService
+from services.crud.request_service import RequestService
 from database.database import get_db
-from app.schemas.user import UserCreate, UserResponse
+from schemas.user import UserCreate, UserResponse
 from worker.tasks import handle_request as celery_handle_request
+from worker.tasks import handle_interpret as celery_interpret
 from fastapi.security import OAuth2PasswordRequestForm
 from schemas.user import TokenResponse
-import pandas as pd
+from pypdf import PdfReader
+import os
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 user_post_route = APIRouter(tags=['User'])
+UPLOAD_DIRECTORY = os.path.abspath("./uploaded")
+os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
+async def get_temp_dir():
+    temp_dir = TemporaryDirectory()
+    try:
+        yield temp_dir.name
+    finally:
+        temp_dir.cleanup()
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     return UserService(db)
@@ -43,11 +54,45 @@ async def signin(form_data: OAuth2PasswordRequestForm = Depends(), user_service:
     return token_data
 
 
-@user_post_route.post("/handle_request", response_model=dict)
-async def handle_request(data: pd.DataFrame, user_service: UserService = Depends(get_user_service)):
+@user_post_route.post("/handle_request", response_model=None)
+async def handle_request(data: UploadFile = File(...), user_service: UserService = Depends(get_user_service)):
     try:
+        pdf_filename = data.filename
+        pdf_path = os.path.join("/app/shared_data", pdf_filename)
+
+        os.makedirs("/app/shared_data", exist_ok=True)
+
+        with open(pdf_path, 'wb') as f:
+            contents = await data.read()
+            f.write(contents)
+
+        if not os.path.exists(pdf_path):
+            raise HTTPException(status_code=500, detail="File was not saved successfully")
+        print(pdf_filename)
         current_user = user_service.get_current_user()
-        celery_handle_request.apply_async(args=[data, current_user.username])
+        celery_handle_request.apply_async(args=[pdf_path, current_user.email])
+
+        return {"message": "Task sent to worker"}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@user_post_route.post("/interpret", response_model=None)
+async def handle_interpret(data: UploadFile = File(...), user_service: UserService = Depends(get_user_service)):
+    try:
+        pdf_filename = data.filename
+        pdf_path = os.path.join("/app/shared_data", pdf_filename)
+
+        with open(pdf_path, 'wb') as f:
+            contents = await data.read()
+            f.write(contents)
+
+        if not os.path.exists(pdf_path):
+            raise HTTPException(status_code=500, detail="File was not saved successfully")
+
+        current_user = user_service.get_current_user()
+        celery_interpret.apply_async(args=[pdf_path, current_user.email])
+
         return {"message": "Task sent to worker"}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
