@@ -17,12 +17,14 @@ user_post_route = APIRouter(tags=['User'])
 UPLOAD_DIRECTORY = os.path.abspath("./uploaded")
 os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
 
+
 async def get_temp_dir():
     temp_dir = TemporaryDirectory()
     try:
         yield temp_dir.name
     finally:
         temp_dir.cleanup()
+
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
     return UserService(db)
@@ -46,7 +48,8 @@ async def signup(data: UserCreate, user_service: UserService = Depends(get_user_
 
 
 @user_post_route.post("/signin", response_model=TokenResponse)
-async def signin(form_data: OAuth2PasswordRequestForm = Depends(), user_service: UserService = Depends(get_user_service)):
+async def signin(form_data: OAuth2PasswordRequestForm = Depends(),
+                 user_service: UserService = Depends(get_user_service)):
     try:
         token_data = user_service.login(email=form_data.username, password=form_data.password)
     except ValueError as e:

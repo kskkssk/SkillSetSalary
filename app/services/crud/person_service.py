@@ -5,8 +5,7 @@ from models.balance import Balance
 from models.user import User
 from services.crud.balance_service import BalanceService
 from services.crud.request_service import RequestService
-from datetime import datetime, timedelta
-import pandas as pd
+from datetime import datetime, timezone
 
 
 class PersonService:
@@ -20,7 +19,7 @@ class PersonService:
         if self.current_user is None:
             raise ValueError("No user is currently logged in")
 
-        time = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+        time = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
         today = datetime.now().date()
         prediction = self.request_service.predict(pdf_path)
         requests = [trans for trans in self.current_user.transaction_list if

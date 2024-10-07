@@ -1,25 +1,5 @@
 def inter(df, shap_dict):
-    '''
-    global_target_mean = 136153.294
-    for col in df:
-        if (df[col] == global_target_mean).any():
-            del shap_dict[col]
 
-    final_dict = {}
-
-    if df['experience'] < 5:
-        shap_dict['Ваш опыт'] = shap_dict.pop('experience')
-        final_dict['']
-
-    features = [
-                'experience^3', 'professional_roles', 'employment_Проектная работа', 'employment_Стажировка',
-                'employment_Частичная занятость', 'schedule', 'has_experience', 'experience'
-                ]
-
-    for f in features:
-        if f in shap_dict.keys():
-            del shap_dict[f]
-    '''
     skills_advice = {}
     skills_improve = {}
 

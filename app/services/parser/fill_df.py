@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import os
 
+
 def init_df():
     df = pd.DataFrame(columns=[
      'area', 'schedule', 'experience',
@@ -26,9 +27,9 @@ def emp_operations(emp):
 
 
 def open_dict(json_path):
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    JSON_PATH = os.path.join(BASE_DIR, json_path)
-    with open(JSON_PATH, 'r', encoding='utf-8') as f:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(base_dir, json_path)
+    with open(json_path, 'r', encoding='utf-8') as f:
         d = json.load(f)
     return d
 
@@ -71,6 +72,6 @@ def load_skills_from_json():
 def ecd_skills(df, skills):
     df['skills'] = df['skills'].fillna('')
     df['skills'] = df['skills'].apply(lambda x: [skill.strip() for skill in x.split(',')])
-    for skill in skills:
-        df[skill] = df['skills'].apply(lambda x: 1 if skill in x else 0)
+    for skill_name in skills:
+        df[skill_name] = df['skills'].apply(lambda x: 1 if skill_name in x else 0)
     return df

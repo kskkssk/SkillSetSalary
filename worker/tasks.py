@@ -32,4 +32,3 @@ def handle_interpret(pdf_path: str, email: str):
     finally:
         db.close()
     return skills_improve, skills_advice
-

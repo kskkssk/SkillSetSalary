@@ -1,19 +1,16 @@
 from logging.config import fileConfig
-
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
 from alembic import context
+from database.database import Base
+from models.user import User
+from models.balance import Balance
+from models.request import Request
 
 config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-
-from database.database import Base
-from models.user import User
-from models.balance import Balance
-from models.request import Request
 
 target_metadata = Base.metadata
 

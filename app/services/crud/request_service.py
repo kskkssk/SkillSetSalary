@@ -13,20 +13,23 @@ class RequestService:
     def __init__(self, session):
         self.session = session
 
-    def validate(self, pdf_path: str):
+    @staticmethod
+    def validate(pdf_path: str):
         try:
             pdf_path.endswith('.pdf')
             return pdf_path
         except ValueError:
             raise ValueError('Expected file in format: .pdf')
 
-    def load_model(self) -> CatBoostRegressor:
+    @staticmethod
+    def load_model() -> CatBoostRegressor:
         model_path = '/app/cb_super'
         model = CatBoostRegressor()
         model.load_model(model_path)
         return model
 
-    def interpretate(self, model, df):
+    @staticmethod
+    def interpretate(model, df):
         explainer = shap.Explainer(model)
         shap_dict = {}
 

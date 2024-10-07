@@ -1,4 +1,3 @@
-import logging
 import asyncio
 from aiogram import Bot, Dispatcher, types
 from aiogram.dispatcher.filters import Command
@@ -54,15 +53,7 @@ async def start(message: types.Message):
     await message.answer(f"Привет, {message.from_user.first_name}! Я помогу тебе узнать, какую зарплату ты можешь "
                          f"получить по твоему резюме с сфере Data Science \n Ты можешь сделать 2 бесплатных запроса в "
                          f"день. Если захочешь больше — каждый дополнительный запрос стоит всего 100 рублей. "
-                         f"Воспользуйся шансом улучшить своё будущее уже сегодня!"
-                         , reply_markup=keyboard)
-
-
-@dp.message_handler(Command('help'))
-async def help(message: types.Message):
-    await message.answer('Доступные команды:\n'
-                         '\start: Начать взаимодействие\n'
-                         '\help: Показать справочную информацию')
+                         f"Воспользуйся шансом улучшить своё будущее уже сегодня!", reply_markup=keyboard)
 
 
 @dp.message_handler(lambda message: message.text.lower() == 'войти в аккаунт', state="*")
