@@ -31,3 +31,6 @@ pandas
 pypdf
 shap
 joblib
+dvc
+dvc[gs]
+dvc[gdrive]

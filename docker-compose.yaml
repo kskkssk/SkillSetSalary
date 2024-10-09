@@ -9,6 +9,7 @@ services:
       - ./app:/app
       - ./worker:/app/worker
       - ./shared_data:/app/shared_data
+      - ./app/credentials.json:/app/shared_data/credentials.json
     ports:
       - "8083:8083"
     environment:
@@ -17,9 +18,16 @@ services:
       - POSTGRES_DB=postgres
       - POSTGRES_HOST=db
       - PYTHONPATH=/app
+      - GOOGLE_APPLICATION_CREDENTIALS=app/shared_data/credentials.json
     networks:
       - backend
-    command: bash -c "alembic revision --autogenerate; alembic upgrade head && uvicorn api:app --host 0.0.0.0 --port 8083 --reload"
+    command: bash -c "dvc remote add -d myremote gdrive://16dvX2G3_Le_gZ_Yb9yQdnz8jwDhR6ERO --force &&
+                      dvc remote modify myremote gdrive_use_service_account true &&
+                      dvc remote modify myremote gdrive_service_account_json_file_path /app/credentials.json &&
+                      dvc pull &&
+                      alembic revision --autogenerate &&
+                      alembic upgrade head && 
+                      uvicorn api:app --host 0.0.0.0 --port 8083 --reload"
     depends_on:
       - db
       - rabbit-mq

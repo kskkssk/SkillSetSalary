@@ -118,3 +118,8 @@ app/telegram_bot/config.py
 
 ./.env
 ./app/.env
+
+./images
+
+app/credentials.json
+
