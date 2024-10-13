@@ -90,6 +90,27 @@ services:
       timeout: 10s
       retries: 5
 
+  tests:
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    env_file:
+      - ./.env
+    volumes:
+      - ./app:/app
+      - ./worker:/app/worker
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST=db
+      - PYTHONPATH=/app
+    networks:
+      - backend
+    depends_on:
+      - db
+    command: bash -c "pytest tests --disable-warnings -v"
+
   telegram-bot:
     build:
       context: .

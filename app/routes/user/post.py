@@ -9,21 +9,9 @@ from worker.tasks import handle_request as celery_handle_request
 from worker.tasks import handle_interpret as celery_interpret
 from fastapi.security import OAuth2PasswordRequestForm
 from schemas.user import TokenResponse
-from pypdf import PdfReader
 import os
-from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 user_post_route = APIRouter(tags=['User'])
-UPLOAD_DIRECTORY = os.path.abspath("./uploaded")
-os.makedirs(UPLOAD_DIRECTORY, exist_ok=True)
-
-
-async def get_temp_dir():
-    temp_dir = TemporaryDirectory()
-    try:
-        yield temp_dir.name
-    finally:
-        temp_dir.cleanup()
 
 
 def get_user_service(db: Session = Depends(get_db)) -> UserService:
@@ -61,6 +49,9 @@ async def signin(form_data: OAuth2PasswordRequestForm = Depends(),
 async def handle_request(data: UploadFile = File(...), user_service: UserService = Depends(get_user_service)):
     try:
         pdf_filename = data.filename
+        if not pdf_filename.endswith('.pdf'):
+            raise HTTPException(status_code=422, detail="Invalid file type. Upload .pdf")
+
         pdf_path = os.path.join("/app/shared_data", pdf_filename)
 
         os.makedirs("/app/shared_data", exist_ok=True)
@@ -84,6 +75,8 @@ async def handle_request(data: UploadFile = File(...), user_service: UserService
 async def handle_interpret(data: UploadFile = File(...), user_service: UserService = Depends(get_user_service)):
     try:
         pdf_filename = data.filename
+        if not pdf_filename.endswith('.pdf'):
+            raise HTTPException(status_code=422, detail="Invalid file type. Upload .pdf")
         pdf_path = os.path.join("/app/shared_data", pdf_filename)
 
         with open(pdf_path, 'wb') as f:

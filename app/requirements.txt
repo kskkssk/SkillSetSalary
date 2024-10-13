@@ -34,3 +34,4 @@ joblib
 dvc
 dvc[gs]
 dvc[gdrive]
+bcrypt

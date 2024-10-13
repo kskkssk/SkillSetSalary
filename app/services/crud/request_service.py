@@ -23,7 +23,7 @@ class RequestService:
 
     @staticmethod
     def load_model() -> CatBoostRegressor:
-        model_path = '/app/cb_super'
+        model_path = 'cb_super'
         model = CatBoostRegressor()
         model.load_model(model_path)
         return model
@@ -83,18 +83,6 @@ class RequestService:
         model = self.load_model()
         shap_dict = self.interpretate(model, final_df)
         skills_improve, skills_advice = inter(final_df, shap_dict)
-        '''
-        significant = 2000
-        positive = {}
-        negative = {}
-        for feature, value in shap_dict.items():
-            impact = value[0]
-            if abs(impact) > significant:
-                if impact > 0:
-                    positive[feature] = impact
-                else:
-                    negative[feature] = impact
-        '''
         del final_df
         del model
         gc.collect()
